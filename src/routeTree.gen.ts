@@ -10,33 +10,132 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
+import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
+import { Route as WorkspaceBrainstormRouteImport } from './routes/workspace.brainstorm'
+import { Route as WorkspaceBuildRouteImport } from './routes/workspace.build'
+import { Route as WorkspaceResearchRouteImport } from './routes/workspace.research'
+import { Route as WorkspaceTestRouteImport } from './routes/workspace.test'
+import { Route as WorkspaceThesisRouteImport } from './routes/workspace.thesis'
+import { Route as WorkspaceValidateRouteImport } from './routes/workspace.validate'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceBrainstormRoute = WorkspaceBrainstormRouteImport.update({
+  id: '/brainstorm',
+  path: '/brainstorm',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceBuildRoute = WorkspaceBuildRouteImport.update({
+  id: '/build',
+  path: '/build',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceResearchRoute = WorkspaceResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTestRoute = WorkspaceTestRouteImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceThesisRoute = WorkspaceThesisRouteImport.update({
+  id: '/thesis',
+  path: '/thesis',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceValidateRoute = WorkspaceValidateRouteImport.update({
+  id: '/validate',
+  path: '/validate',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/workspace': typeof WorkspaceRouteWithChildren
+  '/workspace/brainstorm': typeof WorkspaceBrainstormRoute
+  '/workspace/build': typeof WorkspaceBuildRoute
+  '/workspace/research': typeof WorkspaceResearchRoute
+  '/workspace/test': typeof WorkspaceTestRoute
+  '/workspace/thesis': typeof WorkspaceThesisRoute
+  '/workspace/validate': typeof WorkspaceValidateRoute
+  '/workspace/': typeof WorkspaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/workspace/brainstorm': typeof WorkspaceBrainstormRoute
+  '/workspace/build': typeof WorkspaceBuildRoute
+  '/workspace/research': typeof WorkspaceResearchRoute
+  '/workspace/test': typeof WorkspaceTestRoute
+  '/workspace/thesis': typeof WorkspaceThesisRoute
+  '/workspace/validate': typeof WorkspaceValidateRoute
+  '/workspace': typeof WorkspaceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/workspace': typeof WorkspaceRouteWithChildren
+  '/workspace/brainstorm': typeof WorkspaceBrainstormRoute
+  '/workspace/build': typeof WorkspaceBuildRoute
+  '/workspace/research': typeof WorkspaceResearchRoute
+  '/workspace/test': typeof WorkspaceTestRoute
+  '/workspace/thesis': typeof WorkspaceThesisRoute
+  '/workspace/validate': typeof WorkspaceValidateRoute
+  '/workspace/': typeof WorkspaceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/workspace'
+    | '/workspace/brainstorm'
+    | '/workspace/build'
+    | '/workspace/research'
+    | '/workspace/test'
+    | '/workspace/thesis'
+    | '/workspace/validate'
+    | '/workspace/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/workspace/brainstorm'
+    | '/workspace/build'
+    | '/workspace/research'
+    | '/workspace/test'
+    | '/workspace/thesis'
+    | '/workspace/validate'
+    | '/workspace'
+  id:
+    | '__root__'
+    | '/'
+    | '/workspace'
+    | '/workspace/brainstorm'
+    | '/workspace/build'
+    | '/workspace/research'
+    | '/workspace/test'
+    | '/workspace/thesis'
+    | '/workspace/validate'
+    | '/workspace/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  WorkspaceRoute: typeof WorkspaceRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +147,92 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/': {
+      id: '/workspace/'
+      path: '/'
+      fullPath: '/workspace/'
+      preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/brainstorm': {
+      id: '/workspace/brainstorm'
+      path: '/brainstorm'
+      fullPath: '/workspace/brainstorm'
+      preLoaderRoute: typeof WorkspaceBrainstormRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/build': {
+      id: '/workspace/build'
+      path: '/build'
+      fullPath: '/workspace/build'
+      preLoaderRoute: typeof WorkspaceBuildRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/research': {
+      id: '/workspace/research'
+      path: '/research'
+      fullPath: '/workspace/research'
+      preLoaderRoute: typeof WorkspaceResearchRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/test': {
+      id: '/workspace/test'
+      path: '/test'
+      fullPath: '/workspace/test'
+      preLoaderRoute: typeof WorkspaceTestRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/thesis': {
+      id: '/workspace/thesis'
+      path: '/thesis'
+      fullPath: '/workspace/thesis'
+      preLoaderRoute: typeof WorkspaceThesisRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/workspace/validate': {
+      id: '/workspace/validate'
+      path: '/validate'
+      fullPath: '/workspace/validate'
+      preLoaderRoute: typeof WorkspaceValidateRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
   }
 }
 
+interface WorkspaceRouteChildren {
+  WorkspaceBrainstormRoute: typeof WorkspaceBrainstormRoute
+  WorkspaceBuildRoute: typeof WorkspaceBuildRoute
+  WorkspaceResearchRoute: typeof WorkspaceResearchRoute
+  WorkspaceTestRoute: typeof WorkspaceTestRoute
+  WorkspaceThesisRoute: typeof WorkspaceThesisRoute
+  WorkspaceValidateRoute: typeof WorkspaceValidateRoute
+  WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+}
+
+const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceBrainstormRoute: WorkspaceBrainstormRoute,
+  WorkspaceBuildRoute: WorkspaceBuildRoute,
+  WorkspaceResearchRoute: WorkspaceResearchRoute,
+  WorkspaceTestRoute: WorkspaceTestRoute,
+  WorkspaceThesisRoute: WorkspaceThesisRoute,
+  WorkspaceValidateRoute: WorkspaceValidateRoute,
+  WorkspaceIndexRoute: WorkspaceIndexRoute,
+}
+
+const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
+  WorkspaceRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  WorkspaceRoute: WorkspaceRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
