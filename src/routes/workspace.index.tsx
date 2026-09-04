@@ -31,8 +31,12 @@ const KIND_TONE: Record<string, "quiet" | "moss" | "clay" | "solid"> = {
 };
 
 function ThinkPage() {
-  const { thought, signals, thinking, submitThought, activity } = useThryve();
+  const { thought, signals, thinking, submitThought, activity, aiError } = useThryve();
   const [draft, setDraft] = useState(thought);
+
+  useEffect(() => {
+    setDraft(thought);
+  }, [thought]);
 
   return (
     <div className="space-y-8">
