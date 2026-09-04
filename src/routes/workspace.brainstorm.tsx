@@ -34,7 +34,8 @@ const ORDER: BranchCategory[] = [
 ];
 
 function BrainstormPage() {
-  const { branches, addBranch, updateBranch, removeBranch, mergeBranches, challenge } = useThryve();
+  const { branches, addBranch, updateBranch, removeBranch, mergeBranches, challenge, challengingId } =
+    useThryve();
   const [selected, setSelected] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
