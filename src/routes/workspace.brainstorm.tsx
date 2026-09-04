@@ -100,8 +100,12 @@ function BrainstormPage() {
                     <button onClick={() => toggle(b.id)} className="text-mossdark hover:underline">
                       {selected.includes(b.id) ? "Deselect" : "Select"}
                     </button>
-                    <button onClick={() => challenge(b.id)} className="text-mossdark hover:underline">
-                      Challenge
+                    <button
+                      onClick={() => challenge(b.id)}
+                      disabled={challengingId === b.id}
+                      className="text-mossdark hover:underline disabled:opacity-50"
+                    >
+                      {challengingId === b.id ? "Thinking…" : "Challenge"}
                     </button>
                     <button
                       onClick={() => removeBranch(b.id)}
