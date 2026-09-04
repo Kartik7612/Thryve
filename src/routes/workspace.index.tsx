@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoopStrip } from "@/components/thryve/loop";
 import { Eyebrow, PageHeader, Panel, Pill } from "@/components/thryve/primitives";
 import { useThryve } from "@/lib/thryve-store";
@@ -31,8 +31,12 @@ const KIND_TONE: Record<string, "quiet" | "moss" | "clay" | "solid"> = {
 };
 
 function ThinkPage() {
-  const { thought, signals, thinking, submitThought, activity } = useThryve();
+  const { thought, signals, thinking, submitThought, activity, aiError } = useThryve();
   const [draft, setDraft] = useState(thought);
+
+  useEffect(() => {
+    setDraft(thought);
+  }, [thought]);
 
   return (
     <div className="space-y-8">
@@ -66,6 +70,11 @@ function ThinkPage() {
               {draft.trim().split(/\s+/).filter(Boolean).length} words
             </span>
           </div>
+          {aiError ? (
+            <p className="mt-3 rounded-2xl bg-clay/15 p-3 text-xs leading-relaxed text-mossdark">
+              {aiError}
+            </p>
+          ) : null}
         </Panel>
 
         <Panel tone="sand">

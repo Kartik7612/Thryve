@@ -2,7 +2,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +16,7 @@ import {
   recomputeConfidence,
   uid,
 } from "./thryve-ai";
+import { analyzeThought, challengeBranchAI, expandBranches } from "./thryve-ai.functions";
 import {
   SEED_THOUGHT,
   seedActivity,
@@ -39,6 +42,9 @@ import type {
   Signal,
   ValidationMethod,
 } from "./thryve-types";
+
+const STORAGE_KEY = "thryve:state:v1";
+export const PENDING_KEY = "thryve:pending-thought";
 
 type State = {
   thought: string;
@@ -70,6 +76,8 @@ type Store = State & {
   competitors: typeof seedCompetitors;
   scenarios: typeof seedScenarios;
   thinking: boolean;
+  aiError: string | null;
+  challengingId: string | null;
   submitThought: (text: string) => void;
   addBranch: (category: BranchCategory, text: string) => void;
   updateBranch: (id: string, text: string) => void;
@@ -92,9 +100,19 @@ type Store = State & {
 
 const ThryveContext = createContext<Store | null>(null);
 
+function errorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (raw.includes("429")) return "THRYVE is rate limited right now — try again in a moment.";
+  if (raw.includes("402")) return "AI credits are exhausted for this workspace.";
+  return "THRYVE couldn't reach its reasoning engine, so it fell back to local analysis.";
+}
+
 export function ThryveProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initialState);
   const [thinking, setThinking] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [challengingId, setChallengingId] = useState<string | null>(null);
+  const hydrated = useRef(false);
 
   const logActivity = useCallback((stage: LoopStage, text: string) => {
     setState((s) => ({
@@ -103,32 +121,73 @@ export function ThryveProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const submitThought = useCallback(
-    (text: string) => {
-      if (!text.trim()) return;
-      setThinking(true);
-      window.setTimeout(() => {
-        const signals = extractSignals(text);
-        setState((s) => ({
-          ...s,
-          thought: text,
-          signals,
-          branches: generateBranches(text),
-          activity: [
-            {
-              id: uid(),
-              stage: "think" as LoopStage,
-              text: `Read a new thought and extracted ${signals.length} signals`,
-              at: "just now",
-            },
-            ...s.activity,
-          ].slice(0, 12),
-        }));
-        setThinking(false);
-      }, 900);
-    },
-    [],
-  );
+  const submitThought = useCallback((text: string) => {
+    const thought = text.trim();
+    if (!thought) return;
+    setThinking(true);
+    setAiError(null);
+    setState((s) => ({ ...s, thought }));
+
+    void (async () => {
+      let signals: Signal[];
+      let branches: Branch[];
+      try {
+        const [rawSignals, rawBranches] = await Promise.all([
+          analyzeThought({ data: { thought } }),
+          expandBranches({ data: { thought } }),
+        ]);
+        signals = rawSignals.map((s) => ({ id: uid(), kind: s.kind, text: s.text }));
+        branches = rawBranches.map((b) => ({ id: uid(), category: b.category, text: b.text }));
+      } catch (err) {
+        setAiError(errorMessage(err));
+        signals = extractSignals(thought);
+        branches = generateBranches(thought);
+      }
+
+      setState((s) => ({
+        ...s,
+        thought,
+        signals,
+        branches,
+        activity: [
+          {
+            id: uid(),
+            stage: "think" as LoopStage,
+            text: `Read a new thought and extracted ${signals.length} signals`,
+            at: "just now",
+          },
+          ...s.activity,
+        ].slice(0, 12),
+      }));
+      setThinking(false);
+    })();
+  }, []);
+
+  // Restore from this browser, then pick up a thought handed over by the landing page.
+  useEffect(() => {
+    if (hydrated.current) return;
+    hydrated.current = true;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved) setState({ ...initialState, ...(JSON.parse(saved) as Partial<State>) });
+      const pending = window.localStorage.getItem(PENDING_KEY);
+      if (pending?.trim()) {
+        window.localStorage.removeItem(PENDING_KEY);
+        submitThought(pending);
+      }
+    } catch {
+      /* corrupted storage — keep the seed session */
+    }
+  }, [submitThought]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* quota or private mode */
+    }
+  }, [state]);
 
   const addBranch = useCallback((category: BranchCategory, text: string) => {
     if (!text.trim()) return;
@@ -164,12 +223,30 @@ export function ThryveProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const challenge = useCallback((id: string) => {
-    setState((s) => ({
-      ...s,
-      branches: s.branches.map((b) =>
-        b.id === id ? { ...b, challenged: true, note: challengeBranch(b) } : b,
-      ),
-    }));
+    setChallengingId(id);
+    setState((current) => {
+      const branch = current.branches.find((b) => b.id === id);
+      if (branch) {
+        void (async () => {
+          let note: string;
+          try {
+            note = await challengeBranchAI({
+              data: { thought: current.thought, branch: branch.text },
+            });
+          } catch {
+            note = challengeBranch(branch);
+          }
+          setState((s) => ({
+            ...s,
+            branches: s.branches.map((b) => (b.id === id ? { ...b, challenged: true, note } : b)),
+          }));
+          setChallengingId(null);
+        })();
+      } else {
+        setChallengingId(null);
+      }
+      return current;
+    });
   }, []);
 
   const promoteToHypothesis = useCallback((signalId: string) => {
@@ -248,7 +325,14 @@ export function ThryveProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const reset = useCallback(() => setState(initialState), []);
+  const reset = useCallback(() => {
+    setState(initialState);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const value = useMemo<Store>(
     () => ({
@@ -256,6 +340,8 @@ export function ThryveProvider({ children }: { children: ReactNode }) {
       competitors: seedCompetitors,
       scenarios: seedScenarios,
       thinking,
+      aiError,
+      challengingId,
       submitThought,
       addBranch,
       updateBranch,
@@ -273,6 +359,8 @@ export function ThryveProvider({ children }: { children: ReactNode }) {
     [
       state,
       thinking,
+      aiError,
+      challengingId,
       submitThought,
       addBranch,
       updateBranch,

@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUp } from "lucide-react";
 import { LOOP_STAGES } from "@/components/thryve/loop";
-import { Eyebrow, Panel, Pill } from "@/components/thryve/primitives";
-import { SEED_THOUGHT, seedSignals } from "@/lib/thryve-data";
+import { PENDING_KEY } from "@/lib/thryve-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -10,146 +11,123 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "THRYVE is an AI thinking-to-building workspace: turn a rough thought into evidence, a product thesis, and a build plan you can test.",
+          "THRYVE is an AI co-founder for brainstorming: dump a rough thought and it extracts the signals, branches the idea, and argues back with evidence.",
       },
       { property: "og:title", content: "THRYVE — Think it. Prove it. Build it." },
       {
         property: "og:description",
         content:
-          "An AI co-founder that helps you explore, verify, and build. From rough idea to tested product.",
+          "Start with a half-formed thought. THRYVE reads it like a co-founder and turns it into something you can prove.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Landing,
 });
 
+const PROMPTS = [
+  "A way for students to find real product problems to build",
+  "Tools for solo founders who can't afford a design team",
+  "Something that makes local repair shops findable online",
+  "A better handover between sales and support teams",
+  "An app that turns messy research notes into decisions",
+  "Helping small farms sell direct without a middleman",
+];
+
 function Landing() {
+  const navigate = useNavigate();
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const start = (text: string) => {
+    const thought = text.trim();
+    if (!thought) return;
+    try {
+      window.localStorage.setItem(PENDING_KEY, thought);
+    } catch {
+      /* ignore */
+    }
+    void navigate({ to: "/workspace" });
+  };
+
   return (
-    <main className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+    <main className="flex min-h-screen flex-col bg-background">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
         <span className="font-display text-xl font-semibold tracking-tight">THRYVE</span>
-        <nav className="flex items-center gap-3 text-sm">
-          <a href="#loop" className="hidden text-muted-foreground hover:text-foreground sm:inline">
-            The loop
-          </a>
-          <Link
-            to="/workspace"
-            className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream transition-opacity hover:opacity-90"
-          >
-            Open workspace
-          </Link>
-        </nav>
+        <span className="hidden text-sm text-muted-foreground sm:inline">
+          Think it. Prove it. Build it.
+        </span>
       </header>
 
-      <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-16 pt-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
-        <div className="rise">
-          <Eyebrow>AI workspace for turning thoughts into real products</Eyebrow>
-          <h1 className="mt-4 font-display text-5xl leading-[1.02] tracking-tight sm:text-6xl">
-            Think it.
-            <br />
-            Prove it.
-            <br />
-            <span className="text-mossdark">Build it.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Most ideas die as a note. THRYVE reads the messy version of your thinking, finds what
-            you're assuming, tells you what to verify, and holds you to the evidence until there's a
-            product worth building.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              to="/workspace"
-              className="rounded-full bg-moss px-6 py-3 font-semibold text-cream shadow-[var(--shadow-lift)] transition-transform hover:-translate-y-0.5"
+      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 pb-24">
+        <h1 className="rise text-center font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+          What are you thinking about?
+        </h1>
+        <p className="mt-4 text-center text-base leading-relaxed text-muted-foreground">
+          Say it badly. THRYVE reads the messy version, finds what you're assuming, and starts
+          arguing with you like a co-founder would.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            start(value);
+          }}
+          className="rise mt-8 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-colors focus-within:border-moss"
+        >
+          <textarea
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                start(value);
+              }
+            }}
+            rows={3}
+            placeholder="I have a rough idea about…"
+            className="w-full resize-none bg-transparent px-2 text-base leading-relaxed outline-none placeholder:text-muted-foreground"
+          />
+          <div className="mt-2 flex items-center justify-between px-2">
+            <span className="text-xs text-muted-foreground">Enter to start · Shift+Enter for a new line</span>
+            <button
+              type="submit"
+              disabled={!value.trim()}
+              aria-label="Start thinking"
+              className="grid h-10 w-10 place-items-center rounded-full bg-moss text-cream transition-opacity disabled:opacity-40"
             >
-              Start with a thought
-            </Link>
-            <Link
-              to="/workspace/thesis"
-              className="rounded-full border border-border px-6 py-3 font-semibold transition-colors hover:bg-sand"
-            >
-              See a live thesis
-            </Link>
+              <ArrowUp className="h-4 w-4" />
+            </button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Not a chatbot. Not a doc. A co-founder that argues with you.
-          </p>
+        </form>
+
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {PROMPTS.map((p) => (
+            <button
+              key={p}
+              onClick={() => start(p)}
+              className="rounded-full border border-border bg-card/60 px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-moss/50 hover:text-foreground"
+            >
+              {p}
+            </button>
+          ))}
         </div>
 
-        <Panel className="rise bg-card/80 shadow-[var(--shadow-soft)]">
-          <div className="flex items-center justify-between">
-            <Eyebrow>Raw thought</Eyebrow>
-            <Pill tone="moss">reading…</Pill>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{SEED_THOUGHT}</p>
-          <div className="my-5 h-px bg-border" />
-          <Eyebrow>What THRYVE saw</Eyebrow>
-          <ul className="mt-3 space-y-2.5">
-            {seedSignals.slice(0, 4).map((s) => (
-              <li key={s.id} className="flex gap-3 rounded-2xl bg-sand/60 p-3">
-                <Pill tone="solid" className="h-fit uppercase">
-                  {s.kind}
-                </Pill>
-                <span className="text-sm leading-relaxed">{s.text}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </section>
-
-      <section id="loop" className="border-y border-border bg-surface/60 py-16">
-        <div className="mx-auto max-w-6xl px-6">
-          <Eyebrow>The core loop</Eyebrow>
-          <h2 className="mt-3 max-w-2xl font-display text-3xl leading-tight tracking-tight">
-            Seven moves, then you think again — with more evidence than last time.
-          </h2>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {LOOP_STAGES.map((s, i) => (
-              <Link
-                key={s.key}
-                to={s.to}
-                className="group rounded-3xl border border-border bg-card/60 p-5 transition-all hover:-translate-y-1 hover:border-moss/40"
-              >
-                <span className="text-[11px] font-bold text-muted-foreground">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <p className="mt-2 font-display text-xl tracking-tight">{s.label}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.blurb}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              t: "It disagrees with you",
-              d: "Every branch can be challenged. THRYVE writes the strongest counter-argument, not encouragement.",
-            },
-            {
-              t: "Confidence is earned",
-              d: "Hypotheses move only when evidence lands. Supporting, challenging, or inconclusive — all of it counts.",
-            },
-            {
-              t: "The thesis is alive",
-              d: "Your product argument rewrites itself as research and tests come back. No stale strategy doc.",
-            },
-          ].map((c) => (
-            <Panel key={c.t} tone="sand">
-              <p className="font-display text-xl tracking-tight">{c.t}</p>
-              <p className="mt-2 text-sm leading-relaxed text-mossdark/80">{c.d}</p>
-            </Panel>
+        <div className="mt-12 flex flex-wrap justify-center gap-x-3 gap-y-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {LOOP_STAGES.map((s, i) => (
+            <span key={s.key} className="flex items-center gap-3">
+              {i > 0 ? <span className="text-border">·</span> : null}
+              {s.label}
+            </span>
           ))}
         </div>
       </section>
-
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-display text-base text-foreground">THRYVE</span>
-          <span>Think it. Prove it. Build it.</span>
-        </div>
-      </footer>
     </main>
   );
 }
