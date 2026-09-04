@@ -70,6 +70,11 @@ function ThinkPage() {
               {draft.trim().split(/\s+/).filter(Boolean).length} words
             </span>
           </div>
+          {aiError ? (
+            <p className="mt-3 rounded-2xl bg-clay/15 p-3 text-xs leading-relaxed text-mossdark">
+              {aiError}
+            </p>
+          ) : null}
         </Panel>
 
         <Panel tone="sand">
