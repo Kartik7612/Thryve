@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoopStrip } from "@/components/thryve/loop";
 import { Eyebrow, PageHeader, Panel, Pill } from "@/components/thryve/primitives";
 import { useThryve } from "@/lib/thryve-store";
