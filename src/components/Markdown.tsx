@@ -11,7 +11,7 @@ function textOf(node: ReactNode): string {
   return el.props ? textOf(el.props.children) : "";
 }
 
-function CodeBlock({ children, className }: { children: ReactNode; className?: string }) {
+function CodeBlock({ children, className }: { children: ReactNode; className?: string | undefined }) {
   const code = textOf(children).replace(/\n$/, "");
   const lang = /language-(\w+)/.exec(className ?? "")?.[1] ?? "";
   const [copied, setCopied] = useState(false);
