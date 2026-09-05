@@ -70,37 +70,39 @@ export const Route = createFileRoute("/api/chat")({
           });
         }
 
-        const reader = upstream.body.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        let buffer = "";
-
         const stream = new ReadableStream<Uint8Array>({
-          async pull(controller) {
-            const { done, value } = await reader.read();
-            if (done) {
-              controller.close();
-              return;
-            }
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-            for (const line of lines) {
-              if (!line.startsWith("data:")) continue;
-              const payload = line.slice(5).trim();
-              if (!payload || payload === "[DONE]") continue;
-              try {
-                const evt = JSON.parse(payload) as { type?: string; delta?: string };
-                if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
-                  controller.enqueue(encoder.encode(evt.delta));
+          async start(controller) {
+            const reader = upstream.body!.getReader();
+            const decoder = new TextDecoder();
+            const encoder = new TextEncoder();
+            let buffer = "";
+            let chunks = 0;
+            try {
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() ?? "";
+                for (const line of lines) {
+                  if (!line.startsWith("data:")) continue;
+                  const payload = line.slice(5).trim();
+                  if (!payload || payload === "[DONE]") continue;
+                  try {
+                    const evt = JSON.parse(payload) as { type?: string; delta?: string };
+                    if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
+                      chunks++;
+                      controller.enqueue(encoder.encode(evt.delta));
+                    }
+                  } catch {
+                    /* ignore partial frames */
+                  }
                 }
-              } catch {
-                /* ignore partial frames */
               }
+            } finally {
+              console.log("[chat] stream done, deltas:", chunks);
+              controller.close();
             }
-          },
-          cancel() {
-            void reader.cancel();
           },
         });
 
