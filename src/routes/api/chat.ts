@@ -63,7 +63,6 @@ export const Route = createFileRoute("/api/chat")({
           }),
         });
 
-        console.log("[chat] upstream status", upstream.status, "body?", !!upstream.body);
         if (!upstream.ok || !upstream.body) {
           const detail = await upstream.text().catch(() => "");
           return new Response(detail || upstream.statusText, {
@@ -77,7 +76,6 @@ export const Route = createFileRoute("/api/chat")({
             const decoder = new TextDecoder();
             const encoder = new TextEncoder();
             let buffer = "";
-            let chunks = 0;
             try {
               for (;;) {
                 const { done, value } = await reader.read();
@@ -92,7 +90,6 @@ export const Route = createFileRoute("/api/chat")({
                   try {
                     const evt = JSON.parse(payload) as { type?: string; delta?: string };
                     if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
-                      chunks++;
                       controller.enqueue(encoder.encode(evt.delta));
                     }
                   } catch {
@@ -101,7 +98,6 @@ export const Route = createFileRoute("/api/chat")({
                 }
               }
             } finally {
-              console.log("[chat] stream done, deltas:", chunks);
               controller.close();
             }
           },
