@@ -63,6 +63,7 @@ export const Route = createFileRoute("/api/chat")({
           }),
         });
 
+        console.log("[chat] upstream status", upstream.status, "body?", !!upstream.body);
         if (!upstream.ok || !upstream.body) {
           const detail = await upstream.text().catch(() => "");
           return new Response(detail || upstream.statusText, {
