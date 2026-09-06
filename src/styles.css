@@ -203,3 +203,28 @@
 @utility meter {
   animation: thryve-meter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+@keyframes thryve-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+@utility marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0.5rem;
+  animation: thryve-marquee 34s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
