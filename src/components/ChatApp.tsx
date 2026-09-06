@@ -25,7 +25,7 @@ const SUGGESTIONS = [
   "Validate demand for an AI tutor",
 ];
 
-export function ChatApp({ threadId }: { threadId?: string }) {
+export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const navigate = useNavigate();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Msg[]>([]);

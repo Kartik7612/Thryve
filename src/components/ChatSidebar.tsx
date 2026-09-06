@@ -10,7 +10,7 @@ export function ChatSidebar({
   onDelete,
 }: {
   threads: Thread[];
-  activeId?: string;
+  activeId?: string | undefined;
   open: boolean;
   onClose: () => void;
   onDelete: (id: string) => void;
