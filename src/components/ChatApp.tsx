@@ -33,6 +33,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebar, setSidebar] = useState(false);
+  const [stick, setStick] = useState(true);
   const idRef = useRef<string>(threadId ?? newThreadId());
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -52,8 +53,22 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   }, [threadId]);
 
   useEffect(() => {
+    if (!stick) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  }, [messages, stick]);
+
+  // Let the reader scroll freely: stop auto-following as soon as they move up,
+  // resume once they come back near the bottom.
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.scrollingElement ?? document.documentElement;
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setStick(distance < 120);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const persist = (msgs: Msg[]) => {
     if (msgs.length === 0) return;
