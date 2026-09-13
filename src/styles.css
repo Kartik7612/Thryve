@@ -153,6 +153,12 @@
     border-color: var(--color-border);
   }
 
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--ink) 22%, transparent) transparent;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
