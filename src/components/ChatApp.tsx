@@ -102,6 +102,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
     const next: Msg[] = [...messages, { role: "user", content: prompt }];
     setMessages([...next, { role: "assistant", content: "" }]);
     setBusy(true);
+    setStick(true);
 
     const controller = new AbortController();
     abortRef.current = controller;
