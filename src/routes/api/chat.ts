@@ -73,8 +73,20 @@ export const Route = createFileRoute("/api/chat")({
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("Missing AI key", { status: 500 });
 
-        const body = (await request.json()) as { messages?: Msg[] };
+        const body = (await request.json()) as {
+          messages?: Msg[];
+          mode?: string;
+          context?: string;
+        };
         const messages = (body.messages ?? []).slice(-30);
+        const mode = MODES[body.mode ?? ""] ?? "";
+        const ctx = (body.context ?? "").slice(0, 6000);
+        const instructions =
+          SYSTEM +
+          (mode ? `\n\nCURRENT MODE: ${mode}` : "") +
+          (ctx
+            ? `\n\nACTIVE PROJECT CONTEXT (use it; never ask for what is already here; ask for missing context when needed):\n${ctx}`
+            : "");
 
         const upstream = await fetch(ENDPOINT, {
           method: "POST",
@@ -88,7 +100,7 @@ export const Route = createFileRoute("/api/chat")({
             model: MODEL,
             stream: true,
             store: false,
-            instructions: SYSTEM,
+            instructions,
             input: messages.map((m) => ({
               role: m.role,
               content: [
