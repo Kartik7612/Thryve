@@ -67,7 +67,7 @@ export async function saveMessage(
 }
 
 export async function removeThread(userId: string | null, id: string) {
-  if (!userId) return delLocal(id);
+  if (!userId) { delLocal(id); return; }
   await supabase.from("messages").delete().eq("conversation_id", id);
   await supabase.from("conversations").delete().eq("id", id);
 }
