@@ -66,6 +66,25 @@ When asked for logos or brand books, still deliver them: return self-contained p
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+const MODES: Record<string, string> = {
+  brainstorm:
+    "BRAINSTORM. Generate several genuinely different approaches (not variations). For each: one-line concept, who it is for, why it could work, the biggest risk. Offer to refine, combine, expand or regenerate. Still flag weak ideas honestly.",
+  research:
+    "RESEARCH. Question → claims → sources → supporting vs contradicting evidence → synthesis. Organize into facts, trends, competitors, opportunities and gaps. Cite real URLs only.",
+  challenge:
+    "CHALLENGE. Critique the user's idea or claim hard: weaknesses, hidden assumptions, counterarguments, failure modes, and 3 sharp follow-up questions. No praise padding.",
+  debate:
+    "DEBATE. Analyze independently as Creator, Skeptic, Customer, Competitor, Researcher and Investor (one section each), then a Synthesis that states where they agree, where they conflict, and the verdict.",
+  verify:
+    "VERIFY. List each factual claim, label it VERIFIED/SUPPORTED/PLAUSIBLE/UNCERTAIN/CONTRADICTED/UNVERIFIABLE, show supporting vs conflicting evidence and source quality, separate verified facts from assumptions.",
+  decide:
+    "DECIDE. Compare the options in a Markdown table against explicit criteria (use the user's criteria if given), then pros, cons, risks, assumptions, unanswered questions and a recommendation with confidence.",
+  plan:
+    "PLAN. Structured thinking first (goal, assumptions, constraints, options, risks), then an action plan: milestones, tasks with priority (high/medium/low) and dependencies, as checklists.",
+  build:
+    "BUILD. Turn the research into a concise PRD: problem, users, core jobs, MVP scope, non-goals, key screens, data model, success metrics, riskiest assumption test.",
+};
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
@@ -73,8 +92,20 @@ export const Route = createFileRoute("/api/chat")({
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("Missing AI key", { status: 500 });
 
-        const body = (await request.json()) as { messages?: Msg[] };
+        const body = (await request.json()) as {
+          messages?: Msg[];
+          mode?: string;
+          context?: string;
+        };
         const messages = (body.messages ?? []).slice(-30);
+        const mode = MODES[body.mode ?? ""] ?? "";
+        const ctx = (body.context ?? "").slice(0, 6000);
+        const instructions =
+          SYSTEM +
+          (mode ? `\n\nCURRENT MODE: ${mode}` : "") +
+          (ctx
+            ? `\n\nACTIVE PROJECT CONTEXT (use it; never ask for what is already here; ask for missing context when needed):\n${ctx}`
+            : "");
 
         const upstream = await fetch(ENDPOINT, {
           method: "POST",
@@ -88,7 +119,7 @@ export const Route = createFileRoute("/api/chat")({
             model: MODEL,
             stream: true,
             store: false,
-            instructions: SYSTEM,
+            instructions,
             input: messages.map((m) => ({
               role: m.role,
               content: [
