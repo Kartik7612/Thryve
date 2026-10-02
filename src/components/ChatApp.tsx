@@ -162,7 +162,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   };
 
   const saveToProject = async (i: number, content: string) => {
-    if (!projectId) return toast("Pick a project first (top of the chat).");
+    if (!projectId) { toast("Pick a project first (top of the chat)."); return; }
     setSavingIdx(i);
     try {
       const r = await runAI({ data: { projectId, action: "extract", input: content.slice(0, 18000) } });
