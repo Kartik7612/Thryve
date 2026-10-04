@@ -21,6 +21,8 @@ const ACTIONS = {
     'Action plan. Return tasks[] (6-12) with title, description, priority high|medium|low, milestone name, dependencies (titles of other tasks). items may be empty.',
   extract:
     'Extract from the conversation text in the input. items[].kind one of idea|decision|insight|research|question; tasks[] for action items.',
+  summarize:
+    'Summarize the conversation in the input for the project brain. Return exactly ONE item: kind="summary", title = a short pointer headline (max 12 words), content = 3-6 bullet Markdown: what was asked, key findings/conclusions, open questions, decisions made. tasks[] for any action items mentioned.',
   evolve:
     'Rewrite the given idea as an improved next version based on the instruction. Return exactly one item kind="idea" and metadata.change_reason explaining what changed and why.',
 } as const;
@@ -30,6 +32,8 @@ const Input = z.object({
   action: z.enum(Object.keys(ACTIONS) as [keyof typeof ACTIONS, ...(keyof typeof ACTIONS)[]]),
   input: z.string().max(20000).default(""),
   itemId: z.string().uuid().optional(),
+  conversationId: z.string().max(64).optional(),
+  conversationTitle: z.string().max(300).optional(),
 });
 
 type AIItem = {
@@ -142,7 +146,13 @@ export const runProjectAI = createServerFn({ method: "POST" })
       title: String(i.title || "Untitled").slice(0, 300),
       content: String(i.content || ""),
       confidence: i.confidence ? String(i.confidence).toLowerCase() : null,
-      metadata: { ...(i.metadata ?? {}), source: data.action } as never,
+      metadata: {
+        ...(i.metadata ?? {}),
+        source: data.action,
+        ...(data.conversationId
+          ? { conversation_id: data.conversationId, conversation_title: data.conversationTitle ?? "" }
+          : {}),
+      } as never,
       ...(base
         ? {
             parent_id: base.parent_id ?? base.id,

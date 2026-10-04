@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, BookmarkPlus, Loader2, Menu, Mic, Square } from "lucide-react";
+import { ArrowUp, BookmarkPlus, FileText, Loader2, Menu, Mic, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Markdown } from "@/components/Markdown";
 import { ChatSidebar } from "@/components/ChatSidebar";
@@ -59,6 +59,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const [projects, setProjects] = useState<ProjectLite[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
+  const [savingSummary, setSavingSummary] = useState(false);
   const idRef = useRef<string>(threadId ?? newThreadId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -174,6 +175,32 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
     }
   };
 
+  const saveSummary = async () => {
+    if (!projectId) { toast("Pick a project first (top of the chat)."); return; }
+    if (!messages.length) return;
+    setSavingSummary(true);
+    try {
+      const text = messages
+        .map((m) => `${m.role === "user" ? "User" : "THRYVE"}: ${m.content}`)
+        .join("\n\n")
+        .slice(0, 18000);
+      await runAI({
+        data: {
+          projectId,
+          action: "summarize",
+          input: text,
+          conversationId: idRef.current,
+          conversationTitle: titleFrom(messages[0]?.content ?? ""),
+        },
+      });
+      toast.success(`Saved a chat summary to ${project?.name}.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingSummary(false);
+    }
+  };
+
   const empty = messages.length === 0;
 
   return (
@@ -205,19 +232,36 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
           </div>
           <div className="flex items-center gap-2">
             {user ? (
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                aria-label="Active project"
-                className="max-w-[10rem] rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground outline-none"
-              >
-                <option value="">No project</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                  aria-label="Active project"
+                  className="max-w-[10rem] rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground outline-none"
+                >
+                  <option value="">No project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                {!empty ? (
+                  <button
+                    onClick={() => void saveSummary()}
+                    disabled={savingSummary || busy}
+                    title="Save a summary of this chat to the project"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent/60 hover:text-foreground disabled:opacity-50"
+                  >
+                    {savingSummary ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <FileText className="h-3 w-3" />
+                    )}
+                    Summarize to project
+                  </button>
+                ) : null}
+              </>
             ) : (
               <Link to="/auth" className="rounded-full border border-border px-3 py-1 text-xs hover:border-accent/60">
                 Sign in
