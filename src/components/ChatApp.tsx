@@ -316,8 +316,12 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                             ) : null}
                           </>
                         ) : (
-                          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+                          <span className="inline-flex items-center gap-2.5 text-sm text-muted-foreground">
+                            <img
+                              src={thryveMark.url}
+                              alt=""
+                              className="h-7 w-7 animate-[spin_2.4s_linear_infinite] rounded-full"
+                            />
                             Thinking…
                           </span>
                         )}
