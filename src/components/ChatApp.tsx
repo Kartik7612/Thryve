@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, BookmarkPlus, Loader2, Menu, Mic, Square } from "lucide-react";
+import { ArrowUp, BookmarkPlus, FileText, Loader2, Menu, Mic, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Markdown } from "@/components/Markdown";
 import { ChatSidebar } from "@/components/ChatSidebar";
@@ -59,6 +59,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const [projects, setProjects] = useState<ProjectLite[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
+  const [savingSummary, setSavingSummary] = useState(false);
   const idRef = useRef<string>(threadId ?? newThreadId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -171,6 +172,32 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
       toast.error((e as Error).message);
     } finally {
       setSavingIdx(null);
+    }
+  };
+
+  const saveSummary = async () => {
+    if (!projectId) { toast("Pick a project first (top of the chat)."); return; }
+    if (!messages.length) return;
+    setSavingSummary(true);
+    try {
+      const text = messages
+        .map((m) => `${m.role === "user" ? "User" : "THRYVE"}: ${m.content}`)
+        .join("\n\n")
+        .slice(0, 18000);
+      await runAI({
+        data: {
+          projectId,
+          action: "summarize",
+          input: text,
+          conversationId: idRef.current,
+          conversationTitle: titleFrom(messages[0]?.content ?? ""),
+        },
+      });
+      toast.success(`Saved a chat summary to ${project?.name}.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingSummary(false);
     }
   };
 
