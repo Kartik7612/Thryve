@@ -246,6 +246,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                 ))}
               </select>
             ) : (
+              <span />
               <Link to="/auth" className="rounded-full border border-border px-3 py-1 text-xs hover:border-accent/60">
                 Sign in
               </Link>
