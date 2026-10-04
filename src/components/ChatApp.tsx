@@ -232,21 +232,37 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
           </div>
           <div className="flex items-center gap-2">
             {user ? (
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                aria-label="Active project"
-                className="max-w-[10rem] rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground outline-none"
-              >
-                <option value="">No project</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                  aria-label="Active project"
+                  className="max-w-[10rem] rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground outline-none"
+                >
+                  <option value="">No project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                {!empty ? (
+                  <button
+                    onClick={() => void saveSummary()}
+                    disabled={savingSummary || busy}
+                    title="Save a summary of this chat to the project"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent/60 hover:text-foreground disabled:opacity-50"
+                  >
+                    {savingSummary ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <FileText className="h-3 w-3" />
+                    )}
+                    Summarize to project
+                  </button>
+                ) : null}
+              </>
             ) : (
-              <span />
               <Link to="/auth" className="rounded-full border border-border px-3 py-1 text-xs hover:border-accent/60">
                 Sign in
               </Link>
