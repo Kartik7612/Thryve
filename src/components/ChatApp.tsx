@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { runProjectAI } from "@/lib/project-ai.functions";
 import { newThreadId, titleFrom } from "@/lib/chat-storage";
+import thryveMark from "@/assets/thryve-mark.png.asset.json";
 import {
   clearRun,
   getRun,
