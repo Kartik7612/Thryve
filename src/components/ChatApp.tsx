@@ -11,7 +11,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { runProjectAI } from "@/lib/project-ai.functions";
 import { newThreadId, titleFrom } from "@/lib/chat-storage";
-import thryveMark from "@/assets/thryve-mark.png.asset.json";
 import {
   clearRun,
   getRun,
@@ -319,7 +318,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                         ) : (
                           <span className="inline-flex items-center gap-2.5 text-sm text-muted-foreground">
                             <img
-                              src={thryveMark.url}
+                              src="/favicon.png"
                               alt=""
                               className="h-7 w-7 animate-[spin_2.4s_linear_infinite] rounded-full"
                             />
