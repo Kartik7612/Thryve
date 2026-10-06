@@ -110,7 +110,7 @@ export const Route = createFileRoute("/api/chat")({
         const gemini = process.env["GEMINI_API_KEY"];
         if (gemini) {
           const g = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse",
             {
               method: "POST",
               headers: { "Content-Type": "application/json", "x-goog-api-key": gemini },
