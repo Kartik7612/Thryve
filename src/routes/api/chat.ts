@@ -107,6 +107,63 @@ export const Route = createFileRoute("/api/chat")({
             ? `\n\nACTIVE PROJECT CONTEXT (use it; never ask for what is already here; ask for missing context when needed):\n${ctx}`
             : "");
 
+        const gemini = process.env["GEMINI_API_KEY"];
+        if (gemini) {
+          const g = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-goog-api-key": gemini },
+              signal: request.signal,
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: instructions }] },
+                contents: messages.map((m) => ({
+                  role: m.role === "assistant" ? "model" : "user",
+                  parts: [{ text: m.content }],
+                })),
+              }),
+            },
+          );
+          if (!g.ok || !g.body) {
+            const detail = await g.text().catch(() => "");
+            return new Response(detail.slice(0, 500) || "Gemini request failed", { status: g.status || 502 });
+          }
+          const gs = new ReadableStream<Uint8Array>({
+            async start(controller) {
+              const reader = g.body!.getReader();
+              const dec = new TextDecoder();
+              const enc = new TextEncoder();
+              let buf = "";
+              try {
+                for (;;) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buf += dec.decode(value, { stream: true });
+                  const lines = buf.split("\n");
+                  buf = lines.pop() ?? "";
+                  for (const line of lines) {
+                    if (!line.startsWith("data:")) continue;
+                    try {
+                      const evt = JSON.parse(line.slice(5).trim()) as {
+                        candidates?: { content?: { parts?: { text?: string }[] } }[];
+                      };
+                      const t = evt.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+                      if (t) controller.enqueue(enc.encode(t));
+                    } catch {
+                      /* partial frame */
+                    }
+                  }
+                }
+              } finally {
+                controller.close();
+              }
+            },
+          });
+          return new Response(gs, {
+            headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
+          });
+        }
+
         const upstream = await fetch(ENDPOINT, {
           method: "POST",
           headers: {
