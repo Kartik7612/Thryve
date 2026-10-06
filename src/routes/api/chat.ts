@@ -203,6 +203,9 @@ export const Route = createFileRoute("/api/chat")({
             })),
             reasoning: { effort: "low", summary: "auto" },
           }),
+        }).catch((e: Error) => {
+          if (request.signal.aborted || e.name === "AbortError") return new Response("Stopped", { status: 499 });
+          return new Response("Could not reach the AI service.", { status: 502 });
         });
 
         if (!upstream.ok || !upstream.body) {
