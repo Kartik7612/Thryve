@@ -108,22 +108,37 @@ export const Route = createFileRoute("/api/chat")({
             : "");
 
         const gemini = process.env["GEMINI_API_KEY"];
+        let g: Response | null = null;
         if (gemini) {
-          const g = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-goog-api-key": gemini },
-              signal: request.signal,
-              body: JSON.stringify({
-                systemInstruction: { parts: [{ text: instructions }] },
-                contents: messages.map((m) => ({
-                  role: m.role === "assistant" ? "model" : "user",
-                  parts: [{ text: m.content }],
-                })),
-              }),
-            },
-          );
+          try {
+            g = await fetch(
+              "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-goog-api-key": gemini },
+                signal: request.signal,
+                body: JSON.stringify({
+                  systemInstruction: { parts: [{ text: instructions }] },
+                  contents: messages.map((m) => ({
+                    role: m.role === "assistant" ? "model" : "user",
+                    parts: [{ text: m.content }],
+                  })),
+                }),
+              },
+            );
+          } catch (e) {
+            if (request.signal.aborted || (e as Error).name === "AbortError") {
+              return new Response("Stopped", { status: 499 });
+            }
+            g = null; // network failure → fall back to built-in AI
+          }
+          // Gemini busy/unavailable → fall back to the built-in AI below.
+          if (g && !g.ok && (g.status === 429 || g.status >= 500)) {
+            await g.body?.cancel().catch(() => {});
+            g = null;
+          }
+        }
+        if (g) {
           if (!g.ok || !g.body) {
             const detail = await g.text().catch(() => "");
             return new Response(detail.slice(0, 500) || "Gemini request failed", { status: g.status || 502 });
