@@ -123,6 +123,7 @@ export const Route = createFileRoute("/api/chat")({
                     role: m.role === "assistant" ? "model" : "user",
                     parts: [{ text: m.content }],
                   })),
+                  generationConfig: { thinkingConfig: { thinkingLevel: "low" } },
                 }),
               },
             );
