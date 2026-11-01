@@ -62,6 +62,10 @@ For small talk or trivial questions, answer briefly instead of forcing this stru
 
 16. CORE PRINCIPLE — a useful answer is not the most convincing one; it is the one that survives attempts to disprove it. THINK. SEARCH. CHALLENGE. VERIFY. CONTRADICT. SYNTHESIZE. ADMIT UNCERTAINTY. THRYVE does not promise certainty; it maximizes justified belief.
 
+17. RESEARCH GUARDRAILS — In research and verify mode, the very first thing in your answer must be a fenced \`\`\`guardrails code block containing ONLY valid JSON, no commentary inside the block: {"do": ["4 actions specific to THIS question that make the research trustworthy"], "dont": ["4 pitfalls, biases and mistakes specific to THIS question to avoid"]}. Immediately after the block, continue with the normal answer format.
+
+18. CONTRADICTION DETECTOR — Whenever the evidence genuinely conflicts, end the answer (after Sources) with a fenced \`\`\`contradictions code block containing ONLY valid JSON: {"conflict": true, "disputed": "the exact claim in dispute, one sentence", "sides": [{"claim": "what one side asserts", "sources": [{"url": "real URL", "methodology": "how this source knows what it knows (study, dataset, survey, model…)", "strength": "high|medium|low"}]}], "methodology_differences": "why credible sources disagree — methods, data vintage, definitions, incentives", "resolve_with": "the specific evidence, dataset or test that would settle the disagreement"}. If there is no real conflict, output {"conflict": false}. When evidence is divided, never force a single answer: state the division plainly and let the block carry it.
+
 When asked for logos or brand books, still deliver them: return self-contained production-ready SVG inside a fenced \`svg\` code block, and brand books covering voice, typography, hex palette and guidelines — while keeping every factual or market claim held to the standards above.`;
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -106,79 +110,6 @@ export const Route = createFileRoute("/api/chat")({
           (ctx
             ? `\n\nACTIVE PROJECT CONTEXT (use it; never ask for what is already here; ask for missing context when needed):\n${ctx}`
             : "");
-
-        const gemini = process.env["GEMINI_API_KEY"];
-        let g: Response | null = null;
-        if (gemini) {
-          try {
-            g = await fetch(
-              "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-goog-api-key": gemini },
-                signal: request.signal,
-                body: JSON.stringify({
-                  systemInstruction: { parts: [{ text: instructions }] },
-                  contents: messages.map((m) => ({
-                    role: m.role === "assistant" ? "model" : "user",
-                    parts: [{ text: m.content }],
-                  })),
-                  generationConfig: { thinkingConfig: { thinkingLevel: "low" } },
-                }),
-              },
-            );
-          } catch (e) {
-            if (request.signal.aborted || (e as Error).name === "AbortError") {
-              return new Response("Stopped", { status: 499 });
-            }
-            g = null; // network failure → fall back to built-in AI
-          }
-          // Gemini busy/unavailable → fall back to the built-in AI below.
-          if (g && !g.ok && (g.status === 429 || g.status >= 500)) {
-            await g.body?.cancel().catch(() => {});
-            g = null;
-          }
-        }
-        if (g) {
-          if (!g.ok || !g.body) {
-            const detail = await g.text().catch(() => "");
-            return new Response(detail.slice(0, 500) || "Gemini request failed", { status: g.status || 502 });
-          }
-          const gs = new ReadableStream<Uint8Array>({
-            async start(controller) {
-              const reader = g.body!.getReader();
-              const dec = new TextDecoder();
-              const enc = new TextEncoder();
-              let buf = "";
-              try {
-                for (;;) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-                  buf += dec.decode(value, { stream: true });
-                  const lines = buf.split("\n");
-                  buf = lines.pop() ?? "";
-                  for (const line of lines) {
-                    if (!line.startsWith("data:")) continue;
-                    try {
-                      const evt = JSON.parse(line.slice(5).trim()) as {
-                        candidates?: { content?: { parts?: { text?: string }[] } }[];
-                      };
-                      const t = evt.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-                      if (t) controller.enqueue(enc.encode(t));
-                    } catch {
-                      /* partial frame */
-                    }
-                  }
-                }
-              } finally {
-                controller.close();
-              }
-            },
-          });
-          return new Response(gs, {
-            headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
-          });
-        }
 
         const upstream = await fetch(ENDPOINT, {
           method: "POST",

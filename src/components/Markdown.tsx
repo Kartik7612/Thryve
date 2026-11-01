@@ -2,6 +2,7 @@ import { memo, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, Copy } from "lucide-react";
+import { ContradictionsBlock, GuardrailsBlock } from "@/components/widgets";
 
 function textOf(node: ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
@@ -84,6 +85,12 @@ export const Markdown = memo(function Markdown({ content }: { content: string })
           code: ({ className, children, ...rest }) => {
             const isBlock = typeof className === "string" && className.includes("language-");
             const raw = textOf(children);
+            if (className?.includes("language-guardrails")) {
+              return <GuardrailsBlock raw={raw} />;
+            }
+            if (className?.includes("language-contradictions")) {
+              return <ContradictionsBlock raw={raw} />;
+            }
             if (isBlock || raw.includes("\n")) {
               return <CodeBlock className={className}>{children}</CodeBlock>;
             }
