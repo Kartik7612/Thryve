@@ -107,6 +107,16 @@ export const subscribeRuns = (f: () => void) => {
 export const getRun = (id: string) => runs.get(id);
 export const stopRun = (id: string) => runs.get(id)?.controller.abort();
 
+// Every visible change must swap in a NEW run object: useSyncExternalStore
+// re-renders only when its snapshot changes identity, so mutating the stored
+// run in place would leave the UI on "Thinking…" forever.
+const updateRun = (id: string, patch: Partial<Run>) => {
+  const r = runs.get(id);
+  if (!r) return;
+  runs.set(id, { ...r, ...patch });
+  emit();
+};
+
 export async function startRun(opts: {
   id: string;
   history: Msg[];
