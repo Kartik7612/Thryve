@@ -128,8 +128,7 @@ export async function startRun(opts: {
 }) {
   const { id, history } = opts;
   const controller = new AbortController();
-  const run: Run = { messages: [...history, { role: "assistant", content: "" }], busy: true, error: null, controller };
-  runs.set(id, run);
+  runs.set(id, { messages: [...history, { role: "assistant", content: "" }], busy: true, error: null, controller });
   emit();
   const meta = { mode: opts.mode, projectId: opts.projectId };
   // Save the prompt first so the chat shows up in the list right away.
@@ -162,26 +161,22 @@ export async function startRun(opts: {
       acc += dec.decode(value, { stream: true });
       const now = performance.now();
       if (now - last > 50) {
-        run.messages = [...history, { role: "assistant", content: acc }];
+        updateRun(id, { messages: [...history, { role: "assistant", content: acc }] });
         last = now;
-        emit();
       }
     }
     const answer: Msg = { role: "assistant", content: acc.trim() || "_No answer came back. Try rephrasing that._" };
-    run.messages = [...history, answer];
-    await saveMessage(opts.userId, id, run.messages, answer, meta).catch(() => {});
+    await saveMessage(opts.userId, id, [...history, answer], answer, meta).catch(() => {});
+    updateRun(id, { messages: [...history, answer] });
   } catch (e) {
     if ((e as Error).name === "AbortError") {
-      const partial = run.messages[run.messages.length - 1]?.content ?? "";
-      run.messages = partial ? run.messages : history;
-      if (partial) await saveMessage(opts.userId, id, run.messages, { role: "assistant", content: partial }, meta).catch(() => {});
+      const partial = getRun(id)?.messages[getRun(id)!.messages.length - 1]?.content ?? "";
+      if (partial) await saveMessage(opts.userId, id, getRun(id)!.messages, { role: "assistant", content: partial }, meta).catch(() => {});
     } else {
-      run.error = (e as Error).message;
-      run.messages = history;
+      updateRun(id, { error: (e as Error).message, messages: history });
     }
   } finally {
-    run.busy = false;
-    emit();
+    updateRun(id, { busy: false });
     opts.onSaved();
   }
 }
