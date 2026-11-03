@@ -5,6 +5,7 @@ export type Thread = {
   title: string;
   updatedAt: number;
   messages: Msg[];
+  recap?: string;
 };
 
 const KEY = "thryve:threads:v1";

@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiChatMetaRouteImport } from './routes/api/chat-meta'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as CThreadIdRouteImport } from './routes/c.$threadId'
 
@@ -47,6 +48,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatMetaRoute = ApiChatMetaRouteImport.update({
+  id: '/api/chat-meta',
+  path: '/api/chat-meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   id: '/api/transcribe',
   path: '/api/transcribe',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/chat-meta': typeof ApiChatMetaRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/c/$threadId': typeof CThreadIdRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/chat-meta': typeof ApiChatMetaRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/c/$threadId': typeof CThreadIdRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/chat-meta': typeof ApiChatMetaRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/c/$threadId': typeof CThreadIdRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/projects'
     | '/api/chat'
+    | '/api/chat-meta'
     | '/api/transcribe'
     | '/c/$threadId'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/projects'
     | '/api/chat'
+    | '/api/chat-meta'
     | '/api/transcribe'
     | '/c/$threadId'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/projects'
     | '/api/chat'
+    | '/api/chat-meta'
     | '/api/transcribe'
     | '/c/$threadId'
   fileRoutesById: FileRoutesById
@@ -124,6 +136,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiChatMetaRoute: typeof ApiChatMetaRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   CThreadIdRoute: typeof CThreadIdRoute
 }
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat-meta': {
+      id: '/api/chat-meta'
+      path: '/api/chat-meta'
+      fullPath: '/api/chat-meta'
+      preLoaderRoute: typeof ApiChatMetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/transcribe': {
       id: '/api/transcribe'
       path: '/api/transcribe'
@@ -206,6 +226,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiChatMetaRoute: ApiChatMetaRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   CThreadIdRoute: CThreadIdRoute,
 }

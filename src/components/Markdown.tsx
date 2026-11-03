@@ -50,59 +50,62 @@ function CodeBlock({ children, className }: { children: ReactNode; className?: s
   );
 }
 
+// Defined at module scope ON PURPOSE: recreating this map on every render would
+// give React a new component identity each stream tick, remounting the whole
+// markdown subtree — which replayed the widgets' entrance animation (the
+// guardrails card "blinking" while the answer streamed in).
+const components = {
+  h1: (p: object) => <h1 className="mt-6 mb-3 font-display text-2xl tracking-tight" {...p} />,
+  h2: (p: object) => <h2 className="mt-6 mb-2 font-display text-xl tracking-tight" {...p} />,
+  h3: (p: object) => <h3 className="mt-5 mb-2 font-semibold" {...p} />,
+  p: (p: object) => <p className="my-3" {...p} />,
+  ul: (p: object) => <ul className="my-3 list-disc space-y-1.5 pl-5" {...p} />,
+  ol: (p: object) => <ol className="my-3 list-decimal space-y-1.5 pl-5" {...p} />,
+  strong: (p: object) => <strong className="font-semibold text-foreground" {...p} />,
+  a: (p: object) => (
+    <a
+      className="text-moss underline underline-offset-4 hover:opacity-80"
+      target="_blank"
+      rel="noreferrer noopener"
+      {...p}
+    />
+  ),
+  blockquote: (p: object) => (
+    <blockquote className="my-4 border-l-2 border-moss/50 pl-4 text-muted-foreground" {...p} />
+  ),
+  hr: () => <hr className="my-6 border-border" />,
+  table: (p: object) => (
+    <div className="my-4 overflow-x-auto rounded-xl border border-border">
+      <table className="w-full text-sm" {...p} />
+    </div>
+  ),
+  th: (p: object) => <th className="border-b border-border px-3 py-2 text-left font-semibold" {...p} />,
+  td: (p: object) => <td className="border-b border-border/60 px-3 py-2 align-top" {...p} />,
+  code: ({ className, children, ...rest }: { className?: string; children?: ReactNode; [k: string]: unknown }) => {
+    const isBlock = typeof className === "string" && className.includes("language-");
+    const raw = textOf(children);
+    if (className?.includes("language-guardrails")) {
+      return <GuardrailsBlock raw={raw} />;
+    }
+    if (className?.includes("language-contradictions")) {
+      return <ContradictionsBlock raw={raw} />;
+    }
+    if (isBlock || raw.includes("\n")) {
+      return <CodeBlock className={className}>{children}</CodeBlock>;
+    }
+    return (
+      <code className="rounded bg-surface px-1.5 py-0.5 text-[0.85em]" {...rest}>
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }: { children?: ReactNode }) => <>{children}</>,
+};
+
 export const Markdown = memo(function Markdown({ content }: { content: string }) {
   return (
     <div className="text-[0.95rem] leading-relaxed">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: (p) => <h1 className="mt-6 mb-3 font-display text-2xl tracking-tight" {...p} />,
-          h2: (p) => <h2 className="mt-6 mb-2 font-display text-xl tracking-tight" {...p} />,
-          h3: (p) => <h3 className="mt-5 mb-2 font-semibold" {...p} />,
-          p: (p) => <p className="my-3" {...p} />,
-          ul: (p) => <ul className="my-3 list-disc space-y-1.5 pl-5" {...p} />,
-          ol: (p) => <ol className="my-3 list-decimal space-y-1.5 pl-5" {...p} />,
-          strong: (p) => <strong className="font-semibold text-foreground" {...p} />,
-          a: (p) => (
-            <a
-              className="text-moss underline underline-offset-4 hover:opacity-80"
-              target="_blank"
-              rel="noreferrer noopener"
-              {...p}
-            />
-          ),
-          blockquote: (p) => (
-            <blockquote className="my-4 border-l-2 border-moss/50 pl-4 text-muted-foreground" {...p} />
-          ),
-          hr: () => <hr className="my-6 border-border" />,
-          table: (p) => (
-            <div className="my-4 overflow-x-auto rounded-xl border border-border">
-              <table className="w-full text-sm" {...p} />
-            </div>
-          ),
-          th: (p) => <th className="border-b border-border px-3 py-2 text-left font-semibold" {...p} />,
-          td: (p) => <td className="border-b border-border/60 px-3 py-2 align-top" {...p} />,
-          code: ({ className, children, ...rest }) => {
-            const isBlock = typeof className === "string" && className.includes("language-");
-            const raw = textOf(children);
-            if (className?.includes("language-guardrails")) {
-              return <GuardrailsBlock raw={raw} />;
-            }
-            if (className?.includes("language-contradictions")) {
-              return <ContradictionsBlock raw={raw} />;
-            }
-            if (isBlock || raw.includes("\n")) {
-              return <CodeBlock className={className}>{children}</CodeBlock>;
-            }
-            return (
-              <code className="rounded bg-surface px-1.5 py-0.5 text-[0.85em]" {...rest}>
-                {children}
-              </code>
-            );
-          },
-          pre: ({ children }) => <>{children}</>,
-        }}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {content}
       </ReactMarkdown>
     </div>
