@@ -17,12 +17,13 @@ export async function listThreads(userId: string | null): Promise<Thread[]> {
   if (!userId) return loadLocal();
   const { data } = await supabase
     .from("conversations")
-    .select("id,title,updated_at")
+    .select("id,title,recap,updated_at")
     .order("updated_at", { ascending: false })
     .limit(100);
   return (data ?? []).map((c) => ({
     id: c.id,
     title: c.title,
+    recap: typeof c.recap === "string" && c.recap ? c.recap : undefined,
     updatedAt: new Date(c.updated_at).getTime(),
     messages: [],
   }));
@@ -43,20 +44,22 @@ export async function saveMessage(
   id: string,
   all: Msg[],
   msg: Msg,
-  extra: { mode: string; projectId: string | null },
+  extra: { mode: string; projectId: string | null; title?: string },
 ) {
   if (!userId) {
-    upLocal({ id, title: titleFrom(all[0]?.content ?? ""), updatedAt: Date.now(), messages: all });
+    upLocal({ id, title: extra.title ?? titleFrom(all[0]?.content ?? ""), updatedAt: Date.now(), messages: all });
     return;
   }
-  await supabase.from("conversations").upsert({
+  const conversation: Record<string, unknown> = {
     id,
     owner_id: userId,
-    title: titleFrom(all[0]?.content ?? ""),
     mode: extra.mode,
     project_id: extra.projectId,
     updated_at: new Date().toISOString(),
-  });
+  };
+  // Name the chat only when it is created, so AI-generated titles survive.
+  if (extra.title) conversation.title = extra.title;
+  await supabase.from("conversations").upsert(conversation);
   await supabase.from("messages").insert({
     conversation_id: id,
     owner_id: userId,
@@ -70,6 +73,24 @@ export async function removeThread(userId: string | null, id: string) {
   if (!userId) { delLocal(id); return; }
   await supabase.from("messages").delete().eq("conversation_id", id);
   await supabase.from("conversations").delete().eq("id", id);
+}
+
+/** Store the AI-generated chat name and the "in 30 seconds" recap. */
+export async function saveMeta(
+  userId: string | null,
+  id: string,
+  meta: { title?: string; recap?: string },
+) {
+  if (!userId) {
+    const t = getLocal(id);
+    if (t) upLocal({ ...t, title: meta.title?.trim() || t.title, recap: meta.recap || t.recap });
+    return;
+  }
+  const patch: Record<string, string> = {};
+  if (meta.title?.trim()) patch.title = meta.title.trim().slice(0, 80);
+  if (meta.recap) patch.recap = meta.recap;
+  if (!Object.keys(patch).length) return;
+  await supabase.from("conversations").update(patch).eq("id", id);
 }
 
 /** One-time move of browser chats into the account; local copy kept until success. */
@@ -130,7 +151,13 @@ export async function startRun(opts: {
   const controller = new AbortController();
   runs.set(id, { messages: [...history, { role: "assistant", content: "" }], busy: true, error: null, controller });
   emit();
-  const meta = { mode: opts.mode, projectId: opts.projectId };
+  const meta = {
+    mode: opts.mode,
+    projectId: opts.projectId,
+    // First message of the chat names the conversation; later saves must not
+    // overwrite an AI-generated title.
+    title: history.length === 1 ? titleFrom(history[0]?.content ?? "") : undefined,
+  };
   // Save the prompt first so the chat shows up in the list right away.
   await saveMessage(opts.userId, id, history, history[history.length - 1]!, meta).catch(() => {});
   opts.onSaved();
