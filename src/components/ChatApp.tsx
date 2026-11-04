@@ -18,6 +18,7 @@ import {
   loadMessages,
   migrateLocal,
   removeThread,
+  saveMeta,
   startRun,
   stopRun,
   subscribeRuns,
@@ -60,6 +61,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const [projectId, setProjectId] = useState<string>("");
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
   const [savingSummary, setSavingSummary] = useState(false);
+  const [recap, setRecap] = useState<string | null>(null);
   const idRef = useRef<string>(threadId ?? newThreadId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
