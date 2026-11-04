@@ -280,7 +280,9 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               <Menu className="h-5 w-5" />
             </button>
             <span className="truncate text-sm text-muted-foreground">
-              {empty ? "New chat" : titleFrom(messages[0]?.content ?? "")}
+              {empty
+                ? "New chat"
+                : (threads.find((t) => t.id === idRef.current)?.title ?? titleFrom(messages[0]?.content ?? ""))}
             </span>
           </div>
           <div className="flex items-center gap-2">
