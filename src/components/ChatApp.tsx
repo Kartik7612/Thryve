@@ -106,12 +106,34 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   useEffect(() => {
     if (!threadId) idRef.current = newThreadId();
     setStored([]);
+    setRecap(null);
     stickRef.current = true;
     if (threadId && ready && !getRun(threadId)?.busy) {
       void loadMessages(userId, threadId).then(setStored);
     }
     inputRef.current?.focus();
   }, [threadId, ready, userId]);
+
+  // Show the AI-written recap ("in 30 seconds") when the sidebar data has it.
+  useEffect(() => {
+    const t = threads.find((x) => x.id === idRef.current);
+    if (t?.recap) setRecap(t.recap);
+  }, [threads]);
+
+  // A finished generation must survive the route change (/ -> /c/$id remounts
+  // this component mid-stream): adopt the run's messages into stored state the
+  // moment it completes, then drop the run. Without this, any interaction that
+  // re-rendered after a remount wiped the whole chat back to the empty state.
+  useEffect(() => {
+    if (!run || run.busy) return;
+    if (run.messages.length && stored.length < run.messages.length) {
+      setStored(run.messages);
+      if (idRef.current) clearRun(idRef.current);
+      // First Q&A pair of a conversation: ask the AI for a chat name + recap.
+      if (run.messages.length === 2 && !recap) void makeMeta(run.messages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run, stored.length]);
 
   // Smooth follow while streaming, but never fight the reader's own scrolling.
   useEffect(() => {
