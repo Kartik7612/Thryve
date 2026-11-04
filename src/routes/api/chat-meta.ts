@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/chat-meta")({
               model: MODEL,
               store: false,
               instructions: INSTRUCTIONS,
-              input: `CONVERSATION:\n${text}`,
+              input: `Reply with ONLY a JSON object for this conversation:\nCONVERSATION:\n${text}`,
               reasoning: { effort: "low" },
               text: { format: { type: "json_object" } },
             }),
