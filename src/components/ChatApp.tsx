@@ -106,7 +106,10 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
           });
           const data = (await res.json()) as { title?: string; recap?: string; error?: string };
           if (!res.ok || data.error) return;
-          await saveMeta(userId, id, { title: data.title, recap: data.recap });
+          await saveMeta(userId, id, {
+            ...(data.title ? { title: data.title } : {}),
+            ...(data.recap ? { recap: data.recap } : {}),
+          });
           if (data.recap) setRecap(data.recap);
           refreshThreads();
         } catch {

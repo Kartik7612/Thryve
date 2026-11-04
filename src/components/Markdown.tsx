@@ -81,7 +81,7 @@ const components = {
   ),
   th: (p: object) => <th className="border-b border-border px-3 py-2 text-left font-semibold" {...p} />,
   td: (p: object) => <td className="border-b border-border/60 px-3 py-2 align-top" {...p} />,
-  code: ({ className, children, ...rest }: { className?: string; children?: ReactNode; [k: string]: unknown }) => {
+  code: ({ className, children, ...rest }: { className?: string | undefined; children?: ReactNode; [k: string]: unknown }) => {
     const isBlock = typeof className === "string" && className.includes("language-");
     const raw = textOf(children);
     if (className?.includes("language-guardrails")) {
