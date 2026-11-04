@@ -341,6 +341,23 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                 </div>
               ) : (
                 <div className="mx-auto w-full max-w-3xl px-5 py-8">
+                  {recap ? (
+                    <div className="rise mb-8 rounded-2xl border border-border bg-surface p-4">
+                      <p className="label-eyebrow">In 30 seconds</p>
+                      <ul className="mt-2 space-y-1.5">
+                        {recap
+                          .split("\n")
+                          .map((line) => line.replace(/^[-•*\d.)\s]+/, "").trim())
+                          .filter(Boolean)
+                          .map((line, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                              {line}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   {messages.map((m, i) =>
                     m.role === "user" ? (
                       <div key={i} className="msg-in mb-6 flex justify-end">
