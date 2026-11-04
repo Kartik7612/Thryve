@@ -86,9 +86,9 @@ export async function saveMeta(
     if (t) upLocal({ ...t, title: meta.title?.trim() || t.title, recap: meta.recap || t.recap });
     return;
   }
-  const patch: Record<string, string> = {};
-  if (meta.title?.trim()) patch.title = meta.title.trim().slice(0, 80);
-  if (meta.recap) patch.recap = meta.recap;
+  const patch: { title?: string; recap?: string } = {};
+  if (meta.title?.trim()) patch["title"] = meta.title.trim().slice(0, 80);
+  if (meta.recap) patch["recap"] = meta.recap;
   if (!Object.keys(patch).length) return;
   await supabase.from("conversations").update(patch).eq("id", id);
 }
@@ -151,13 +151,13 @@ export async function startRun(opts: {
   const controller = new AbortController();
   runs.set(id, { messages: [...history, { role: "assistant", content: "" }], busy: true, error: null, controller });
   emit();
-  const meta = {
+  const meta: { mode: string; projectId: string | null; title?: string } = {
     mode: opts.mode,
     projectId: opts.projectId,
-    // First message of the chat names the conversation; later saves must not
-    // overwrite an AI-generated title.
-    title: history.length === 1 ? titleFrom(history[0]?.content ?? "") : undefined,
   };
+  // First message of the chat names the conversation; later saves must not
+  // overwrite an AI-generated title.
+  if (history.length === 1) meta.title = titleFrom(history[0]?.content ?? "");
   // Save the prompt first so the chat shows up in the list right away.
   await saveMessage(opts.userId, id, history, history[history.length - 1]!, meta).catch(() => {});
   opts.onSaved();
