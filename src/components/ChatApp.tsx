@@ -88,6 +88,35 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
     void listThreads(userId).then(setThreads);
   }, [userId]);
 
+  // After the first answer, let the AI name the chat and write the
+  // "in 30 seconds" recap, then persist both to the thread.
+  const makeMeta = useCallback(
+    (msgs: Msg[]) => {
+      const id = idRef.current;
+      const text = msgs
+        .map((m) => `${m.role === "user" ? "User" : "THRYVE"}: ${m.content}`)
+        .join("\n\n")
+        .slice(0, 12000);
+      void (async () => {
+        try {
+          const res = await fetch("/api/chat-meta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          const data = (await res.json()) as { title?: string; recap?: string; error?: string };
+          if (!res.ok || data.error) return;
+          await saveMeta(userId, id, { title: data.title, recap: data.recap });
+          if (data.recap) setRecap(data.recap);
+          refreshThreads();
+        } catch {
+          /* meta is a nice-to-have; never block the chat on it */
+        }
+      })();
+    },
+    [userId, refreshThreads],
+  );
+
   useEffect(() => {
     if (!ready) return;
     if (userId) {
