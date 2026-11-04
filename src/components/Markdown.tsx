@@ -1,8 +1,11 @@
-import { memo, useState, type ReactNode } from "react";
+import { memo, useState, type ClassAttributes, type HTMLAttributes, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import type { ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, Copy } from "lucide-react";
 import { ContradictionsBlock, GuardrailsBlock } from "@/components/widgets";
+
+type CodeProps = ClassAttributes<HTMLElement> & HTMLAttributes<HTMLElement> & ExtraProps;
 
 function textOf(node: ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
@@ -81,7 +84,7 @@ const components = {
   ),
   th: (p: object) => <th className="border-b border-border px-3 py-2 text-left font-semibold" {...p} />,
   td: (p: object) => <td className="border-b border-border/60 px-3 py-2 align-top" {...p} />,
-  code: ({ className, children, ...rest }: { className?: string | undefined; children?: ReactNode; [k: string]: unknown }) => {
+  code: ({ className, children }: CodeProps) => {
     const isBlock = typeof className === "string" && className.includes("language-");
     const raw = textOf(children);
     if (className?.includes("language-guardrails")) {
@@ -94,7 +97,7 @@ const components = {
       return <CodeBlock className={className}>{children}</CodeBlock>;
     }
     return (
-      <code className="rounded bg-surface px-1.5 py-0.5 text-[0.85em]" {...rest}>
+      <code className="rounded bg-surface px-1.5 py-0.5 text-[0.85em]">
         {children}
       </code>
     );
