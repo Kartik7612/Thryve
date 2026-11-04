@@ -18,6 +18,7 @@ import {
   loadMessages,
   migrateLocal,
   removeThread,
+  saveMeta,
   startRun,
   stopRun,
   subscribeRuns,
@@ -60,6 +61,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const [projectId, setProjectId] = useState<string>("");
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
   const [savingSummary, setSavingSummary] = useState(false);
+  const [recap, setRecap] = useState<string | null>(null);
   const idRef = useRef<string>(threadId ?? newThreadId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -86,6 +88,38 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
     void listThreads(userId).then(setThreads);
   }, [userId]);
 
+  // After the first answer, let the AI name the chat and write the
+  // "in 30 seconds" recap, then persist both to the thread.
+  const makeMeta = useCallback(
+    (msgs: Msg[]) => {
+      const id = idRef.current;
+      const text = msgs
+        .map((m) => `${m.role === "user" ? "User" : "THRYVE"}: ${m.content}`)
+        .join("\n\n")
+        .slice(0, 12000);
+      void (async () => {
+        try {
+          const res = await fetch("/api/chat-meta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          const data = (await res.json()) as { title?: string; recap?: string; error?: string };
+          if (!res.ok || data.error) return;
+          await saveMeta(userId, id, {
+            ...(data.title ? { title: data.title } : {}),
+            ...(data.recap ? { recap: data.recap } : {}),
+          });
+          if (data.recap) setRecap(data.recap);
+          refreshThreads();
+        } catch {
+          /* meta is a nice-to-have; never block the chat on it */
+        }
+      })();
+    },
+    [userId, refreshThreads],
+  );
+
   useEffect(() => {
     if (!ready) return;
     if (userId) {
@@ -104,12 +138,34 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   useEffect(() => {
     if (!threadId) idRef.current = newThreadId();
     setStored([]);
+    setRecap(null);
     stickRef.current = true;
     if (threadId && ready && !getRun(threadId)?.busy) {
       void loadMessages(userId, threadId).then(setStored);
     }
     inputRef.current?.focus();
   }, [threadId, ready, userId]);
+
+  // Show the AI-written recap ("in 30 seconds") when the sidebar data has it.
+  useEffect(() => {
+    const t = threads.find((x) => x.id === idRef.current);
+    if (t?.recap) setRecap(t.recap);
+  }, [threads]);
+
+  // A finished generation must survive the route change (/ -> /c/$id remounts
+  // this component mid-stream): adopt the run's messages into stored state the
+  // moment it completes, then drop the run. Without this, any interaction that
+  // re-rendered after a remount wiped the whole chat back to the empty state.
+  useEffect(() => {
+    if (!run || run.busy) return;
+    if (run.messages.length && stored.length < run.messages.length) {
+      setStored(run.messages);
+      if (idRef.current) clearRun(idRef.current);
+      // First Q&A pair of a conversation: ask the AI for a chat name + recap.
+      if (run.messages.length === 2 && !recap) void makeMeta(run.messages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run, stored.length]);
 
   // Smooth follow while streaming, but never fight the reader's own scrolling.
   useEffect(() => {
@@ -227,7 +283,9 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               <Menu className="h-5 w-5" />
             </button>
             <span className="truncate text-sm text-muted-foreground">
-              {empty ? "New chat" : titleFrom(messages[0]?.content ?? "")}
+              {empty
+                ? "New chat"
+                : (threads.find((t) => t.id === idRef.current)?.title ?? titleFrom(messages[0]?.content ?? ""))}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -288,6 +346,23 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                 </div>
               ) : (
                 <div className="mx-auto w-full max-w-3xl px-5 py-8">
+                  {recap ? (
+                    <div className="rise mb-8 rounded-2xl border border-border bg-surface p-4">
+                      <p className="label-eyebrow">In 30 seconds</p>
+                      <ul className="mt-2 space-y-1.5">
+                        {recap
+                          .split("\n")
+                          .map((line) => line.replace(/^[-•*\d.)\s]+/, "").trim())
+                          .filter(Boolean)
+                          .map((line, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                              {line}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   {messages.map((m, i) =>
                     m.role === "user" ? (
                       <div key={i} className="msg-in mb-6 flex justify-end">
