@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, BookmarkPlus, FileText, Loader2, Menu, Mic, Square } from "lucide-react";
+import glassBackdrop from "@/assets/thryve-glass-blue.jpg";
 import { toast } from "sonner";
 import { Markdown } from "@/components/Markdown";
 import { ChatSidebar } from "@/components/ChatSidebar";
@@ -260,7 +261,20 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const empty = messages.length === 0;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="relative flex h-screen overflow-hidden bg-background">
+      {empty ? (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <img
+            src={glassBackdrop}
+            alt=""
+            width={1536}
+            height={1024}
+            fetchPriority="high"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-background/45" />
+        </div>
+      ) : null}
       <ChatSidebar
         threads={threads}
         activeId={threadId}
@@ -272,8 +286,8 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
         }}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur">
+      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
+        <header className={`flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 backdrop-blur ${empty ? "bg-background/25" : "bg-background/85"}`}>
           <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => setSidebar(true)}
@@ -336,11 +350,15 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               className={`thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain ${empty ? "flex flex-col justify-center" : ""}`}
             >
               {empty ? (
-                <div className="mx-auto w-full max-w-2xl px-5">
-                  <h1 className="rise text-center font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
-                    What are you <em className="text-accent">working on?</em>
-                  </h1>
-                  <p className="mt-4 text-center text-sm text-muted-foreground">
+                <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-5 text-center">
+                  <h1 className="sr-only">THRYVE</h1>
+                  <div aria-hidden="true" className="rise flex flex-col items-center font-display text-5xl leading-[0.76] text-foreground sm:text-6xl">
+                    {[..."THRYVE"].map((letter, index) => (
+                      <span key={`${letter}-${index}`}>{letter}</span>
+                    ))}
+                  </div>
+                  <p className="mt-5 text-base font-semibold text-foreground">What are you working on?</p>
+                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-foreground/80">
                     Evidence-first research, honest challenges, debates, plans — or just think out loud.
                   </p>
                 </div>
