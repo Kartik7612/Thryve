@@ -2,6 +2,8 @@
 
 - [ ] Stabilize chat switching, streaming, scrolling, account sync, and error states
 - [ ] Upgrade chat hierarchy, actions, evidence display, and visual system
+- [ ] Add Perplexity live-search evidence and citations to chat answers
+- [ ] Refresh the opening screen using the supplied sky-and-editorial reference
 - [ ] Build project library with create/search/sort/manage actions
 - [ ] Build project detail with overview and all thinking modes
 - [ ] Complete snippets, pointer summaries, versions, tasks, sharing, and exports
