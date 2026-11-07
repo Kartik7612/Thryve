@@ -8,6 +8,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { SourcesPanel, extractSources } from "@/components/SourcesPanel";
 import { useDictation } from "@/lib/use-dictation";
 import { useAuth } from "@/hooks/use-auth";
+import openingSky from "@/assets/thryve-opening-sky.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { runProjectAI } from "@/lib/project-ai.functions";
 import { newThreadId, titleFrom } from "@/lib/chat-storage";
@@ -272,12 +273,17 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
         }}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur">
+      <main className={`relative flex min-w-0 flex-1 flex-col ${empty ? "opening-screen" : ""}`}>
+        {empty ? (
+          <div className="opening-backdrop pointer-events-none absolute inset-0" aria-hidden="true">
+            <img src={openingSky} alt="" width={1792} height={1024} className="h-full w-full object-cover" />
+          </div>
+        ) : null}
+        <header className={`relative z-10 flex items-center justify-between gap-3 border-b px-4 py-2.5 backdrop-blur ${empty ? "border-opening-edge bg-opening-glass/35 text-opening-ink" : "border-border/60 bg-background/85"}`}>
           <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => setSidebar(true)}
-              className="text-muted-foreground transition-colors hover:text-foreground md:hidden"
+              className="text-muted-foreground transition-colors hover:text-foreground lg:hidden"
               aria-label="Open chats"
             >
               <Menu className="h-5 w-5" />
@@ -336,13 +342,15 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               className={`thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain ${empty ? "flex flex-col justify-center" : ""}`}
             >
               {empty ? (
-                <div className="mx-auto w-full max-w-2xl px-5">
-                  <h1 className="rise text-center font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
-                    What are you <em className="text-accent">working on?</em>
+          <div className="rise mx-auto w-full max-w-5xl px-6 pb-8 pt-10 sm:px-10 lg:px-14">
+                  <p className="mb-5 text-xs font-semibold uppercase tracking-[0.18em] text-opening-ink/75">THRYVE · Think with evidence</p>
+                  <h1 className="max-w-4xl font-display text-5xl leading-[0.98] sm:text-6xl lg:text-7xl">
+                    Make your next idea<br /><em className="text-opening-ink/75">earn its future.</em>
                   </h1>
-                  <p className="mt-4 text-center text-sm text-muted-foreground">
-                    Evidence-first research, honest challenges, debates, plans — or just think out loud.
+                  <p className="mt-5 max-w-xl text-base leading-relaxed text-opening-muted sm:text-lg">
+                    Research what matters. Challenge what doesn’t. Build what survives.
                   </p>
+                  <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.15em] text-opening-ink/70">Think <span className="px-2">/</span> Search <span className="px-2">/</span> Challenge <span className="px-2">/</span> Build</p>
                 </div>
               ) : (
                 <div className="mx-auto w-full max-w-3xl px-5 py-8">
@@ -413,15 +421,15 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
             </div>
 
             <div className="px-4 pb-5 pt-2">
-              <div className="mx-auto mb-2 flex w-full max-w-3xl gap-1.5 overflow-x-auto thin-scroll">
+              <div className={`relative z-10 mx-auto mb-2 flex w-full max-w-3xl gap-1.5 overflow-x-auto thin-scroll ${empty ? "" : ""}`}>
                 {MODES.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setMode(m.id)}
                     className={`shrink-0 rounded-full px-3 py-1 text-xs transition-colors ${
                       mode === m.id
-                        ? "bg-accent text-accent-foreground"
-                        : "border border-border text-muted-foreground hover:text-foreground"
+                        ? empty ? "bg-opening-ink text-background" : "bg-accent text-accent-foreground"
+                        : empty ? "border border-opening-edge bg-opening-glass/30 text-opening-ink hover:bg-opening-glass/70" : "border border-border text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {m.label}
@@ -433,7 +441,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                   e.preventDefault();
                   send(value);
                 }}
-                className="mx-auto w-full max-w-3xl rounded-3xl border border-border bg-card p-3 shadow-[var(--shadow-soft)] transition-colors focus-within:border-accent"
+                className={`relative z-10 mx-auto w-full max-w-3xl rounded-3xl border p-3 transition-colors ${empty ? "opening-compose border-opening-edge bg-opening-glass text-opening-ink" : "border-border bg-card shadow-[var(--shadow-soft)] focus-within:border-accent"}`}
               >
                 <textarea
                   ref={inputRef}
@@ -447,10 +455,10 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                   }}
                   rows={2}
                   placeholder="Ask anything — research, a claim to verify, an idea to challenge…"
-                  className="w-full resize-none bg-transparent px-2 py-1 text-[0.95rem] leading-relaxed outline-none placeholder:text-muted-foreground"
+                  className={`w-full resize-none bg-transparent px-2 py-1 text-base leading-relaxed outline-none ${empty ? "placeholder:text-opening-muted" : "placeholder:text-muted-foreground"}`}
                 />
                 <div className="flex items-center justify-between gap-3 px-2">
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className={`truncate text-xs ${empty ? "text-opening-muted" : "text-muted-foreground"}`}>
                     {dictation.recording
                       ? "Listening… tap the mic to stop"
                       : dictation.transcribing
@@ -467,7 +475,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
                       className={`grid h-9 w-9 place-items-center rounded-full border transition-colors ${
                         dictation.recording
                           ? "animate-pulse border-destructive/50 bg-destructive/15 text-destructive"
-                          : "border-border text-muted-foreground hover:text-foreground"
+                          : empty ? "border-opening-edge text-opening-ink hover:bg-opening-glass/60" : "border-border text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {dictation.transcribing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
@@ -496,13 +504,13 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               </form>
 
               {empty ? (
-                <div className="marquee mx-auto mt-4 max-w-3xl">
+                <div className="marquee relative z-10 mx-auto mt-4 max-w-3xl">
                   <div className="marquee-track">
                     {[...SUGGESTIONS, ...SUGGESTIONS].map((s, i) => (
                       <button
                         key={`${s}-${i}`}
                         onClick={() => send(s)}
-                        className="shrink-0 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/60 hover:text-foreground"
+                        className="shrink-0 rounded-full border border-opening-edge bg-opening-glass/65 px-3 py-1.5 text-xs text-opening-ink transition-colors hover:bg-opening-glass"
                       >
                         {s}
                       </button>

@@ -51,6 +51,10 @@
   --color-sage: var(--sage);
   --color-clay: var(--clay);
   --color-surface: var(--surface);
+  --color-opening-ink: var(--opening-ink);
+  --color-opening-muted: var(--opening-muted);
+  --color-opening-edge: var(--opening-edge);
+  --color-opening-glass: var(--opening-glass);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -76,6 +80,10 @@
   --sage: oklch(0.72 0.09 250);
   --clay: oklch(0.62 0.13 255);
   --surface: oklch(0.17 0.024 264);
+  --opening-ink: oklch(0.24 0.055 165);
+  --opening-muted: oklch(0.31 0.04 195);
+  --opening-edge: oklch(0.24 0.055 165 / 24%);
+  --opening-glass: oklch(0.99 0.02 95 / 82%);
 
   --background: var(--cream);
   --foreground: var(--ink);
@@ -117,6 +125,10 @@
   --sage: oklch(0.62 0.035 120);
   --clay: oklch(0.72 0.082 62);
   --surface: oklch(0.23 0.01 70);
+  --opening-ink: oklch(0.24 0.055 165);
+  --opening-muted: oklch(0.31 0.04 195);
+  --opening-edge: oklch(0.24 0.055 165 / 24%);
+  --opening-glass: oklch(0.99 0.02 95 / 82%);
 
   --background: var(--cream);
   --foreground: var(--ink);
@@ -233,4 +245,25 @@
 
 .marquee:hover .marquee-track {
   animation-play-state: paused;
+}
+
+.opening-screen {
+  color: var(--opening-ink);
+}
+
+.opening-backdrop::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--opening-glass) 38%, transparent),
+    color-mix(in oklab, var(--opening-glass) 16%, transparent) 48%,
+    color-mix(in oklab, var(--opening-ink) 16%, transparent)
+  );
+}
+
+.opening-compose {
+  box-shadow: 0 20px 58px -28px color-mix(in oklab, var(--opening-ink) 45%, transparent);
+  backdrop-filter: blur(16px);
 }
