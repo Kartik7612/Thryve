@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowUp, BookmarkPlus, FileText, Loader2, Menu, Mic, Square } from "lucide-react";
-import darkCodeTexture from "@/assets/thryve-dark-code-texture.jpg";
 import { toast } from "sonner";
 import { Markdown } from "@/components/Markdown";
 import { ChatSidebar } from "@/components/ChatSidebar";
@@ -261,19 +260,7 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
   const empty = messages.length === 0;
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-background">
-      {empty ? (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <img
-            src={darkCodeTexture}
-            alt=""
-            width={1792}
-            height={1024}
-            fetchPriority="high"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      ) : null}
+    <div className="flex h-screen overflow-hidden bg-background">
       <ChatSidebar
         threads={threads}
         activeId={threadId}
@@ -285,8 +272,8 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
         }}
       />
 
-      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className={`flex items-center justify-between gap-3 border-b border-border/60 px-4 py-2.5 backdrop-blur ${empty ? "bg-background/10" : "bg-background/85"}`}>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur">
           <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => setSidebar(true)}
@@ -349,13 +336,12 @@ export function ChatApp({ threadId }: { threadId?: string | undefined }) {
               className={`thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain ${empty ? "flex flex-col justify-center" : ""}`}
             >
               {empty ? (
-                <div className="rise mx-auto flex w-full max-w-5xl flex-col items-start px-5 pb-10 pt-10 sm:px-10 sm:pt-16 lg:px-14 lg:pt-20">
-                  <p className="label-eyebrow mb-5 text-foreground/65">THRYVE · EVIDENCE-FIRST AI</p>
-                  <h1 className="max-w-4xl font-sans text-4xl font-medium leading-[1.08] text-foreground sm:text-5xl lg:text-6xl">
-                    Research what matters.<br className="hidden sm:block" /> Build what holds up.
+                <div className="mx-auto w-full max-w-2xl px-5">
+                  <h1 className="rise text-center font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
+                    What are you <em className="text-accent">working on?</em>
                   </h1>
-                  <p className="mt-5 max-w-xl text-sm leading-relaxed text-foreground/70 sm:text-base">
-                    Challenge claims, verify evidence, and turn your strongest ideas into something real.
+                  <p className="mt-4 text-center text-sm text-muted-foreground">
+                    Evidence-first research, honest challenges, debates, plans — or just think out loud.
                   </p>
                 </div>
               ) : (
